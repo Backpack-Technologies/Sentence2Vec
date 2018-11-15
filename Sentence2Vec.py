@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import gensim
 import smart_open
 import multiprocessing
