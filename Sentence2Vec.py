@@ -24,8 +24,8 @@ def read_corpus(fname, tokens_only=False):
             if loop % 1000 == 0:
                 print(loop)
 
-            # if loop == 1000000:
-            #     break
+            if loop == 10000000:
+                break
 
 model = None
 corpus = None
@@ -78,13 +78,13 @@ def main():
     corpus = list(read_corpus("data/data.txt"))
     print("Started 1")
     model = gensim.models.doc2vec.Doc2Vec(corpus, vector_size=400, window=100, hs=1, dm=1, min_count=2, epochs=10,
-                                          workers=cores, alpha=0.016, min_alpha=0.00001)
+                                          workers=cores, alpha=0.016, min_alpha=0.00001, callbacks=[EpochLogger()])
     # print("Started 2")
     # model.build_vocab(corpus)
     print("Started 3")
     model.train(corpus, total_examples=model.corpus_count, epochs=model.epochs, callbacks=[EpochLogger()])
     print("Started 4")
-    model.save("data/doc2vec1.model")
+    model.save("data/doc2vec2.model")
 
     _start_shell(locals())
 
