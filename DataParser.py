@@ -25,8 +25,8 @@ def main():
                     if loop % 1000 == 0:
                         print(loop)
 
-                    if loop == 1000000:
-                        break
+                    # if loop == 1000000:
+                    #     break
 
 
 if __name__ == "__main__":
