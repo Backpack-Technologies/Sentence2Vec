@@ -39,7 +39,7 @@ sess = tf.Session()
 # Declare model parameters
 batch_size = 500
 vocabulary_size = 7500
-generations = 10000
+generations = 100000
 # generations = 100
 model_learning_rate = 0.001
 
@@ -213,6 +213,7 @@ logistic_batch_size = 500
 # text_data_test = np.array([x[0:max_words] for x in [y + [0] * max_words for y in text_data_test]])
 
 # print(target)
+print("starting")
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(docs, target, test_size=0.2, random_state=42)
 X_train = np.array(X_train)
@@ -220,7 +221,7 @@ y_train = np.array(y_train)
 X_test = np.array(X_test)
 y_test = np.array(y_test)
 
-# print(len(X_train), len(X_train[0]), len(y_train), len(y_train[0]))
+print(len(X_train), len(X_train[0]), len(y_train), len(y_train[0]))
 
 from tensorflow import keras
 
@@ -252,7 +253,7 @@ checkpoint = keras.callbacks.ModelCheckpoint("./model/best.h5", monitor='val_los
 callbacks_list = []
 
 # model = create_neural_model()
-model.fit(X_train, y_train, epochs=10000, batch_size=256, validation_split=0.1, callbacks=callbacks_list)
+model.fit(X_train, y_train, epochs=generations, batch_size=256, validation_split=0.1, callbacks=callbacks_list)
 print("Current one: ", model.evaluate(X_test, y_test, batch_size=256))
 
 # # Define Logistic placeholders
