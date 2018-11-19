@@ -40,7 +40,7 @@ sess = tf.Session()
 batch_size = 500
 vocabulary_size = 7500
 generations = 100000
-generations = 100
+# generations = 100
 model_learning_rate = 0.001
 
 embedding_size = 200  # Word embedding size
@@ -224,11 +224,11 @@ print("starting")
 docs = np.array(docs)
 target = np.array(target)
 
-ratio = docs.shape[0]/10
+ratio = int( docs.shape[0]/10 )
 X_train = docs[ratio:,:]
 X_test = docs[:ratio,:]
-Y_train = target[ratio:,:]
-Y_test = target[:ratio,:]
+y_train = target[ratio:,:]
+y_test = target[:ratio,:]
 
 
 print(len(X_train), len(X_train[0]), len(y_train), len(y_train[0]))

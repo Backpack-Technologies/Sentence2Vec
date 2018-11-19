@@ -177,6 +177,7 @@ def load_movie_data(data_folder_name):
 def load_product_data():
     texts = []
     tot_data = 10000000000000
+    # tot_data = 100
     with open("./data/dataTitle.txt", "r") as fp:
         for row in fp:
             texts.append(row)
