@@ -176,9 +176,12 @@ def load_movie_data(data_folder_name):
 
 def load_product_data():
     texts = []
+    tot_data = 10000000000000
     with open("./data/dataTitle.txt", "r") as fp:
         for row in fp:
             texts.append(row)
+            if len(texts) >= tot_data:
+                break
     target = []
     with open("./data/dataDimesions.txt", "r") as fp:
         for row in fp:
@@ -191,6 +194,8 @@ def load_product_data():
             tmpL.append(float(tmp[3]))
 
             target.append(tmpL)
+            if len(target) >= tot_data:
+                break
 
     print(len(texts), len(target))
     return texts, target

@@ -6,3 +6,4 @@ test.ipynb
 temp/
 __pycache__/
 model/
+test.py

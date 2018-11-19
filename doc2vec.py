@@ -39,7 +39,7 @@ sess = tf.Session()
 # Declare model parameters
 batch_size = 500
 vocabulary_size = 7500
-generations = 100000
+generations = 10000
 # generations = 100
 model_learning_rate = 0.001
 
@@ -73,7 +73,6 @@ texts, target = text_helpers.load_product_data()
 print('Normalizing Text Data')
 texts = text_helpers.normalize_text(texts, stops)
 
-print(target[0], len(target), len(texts))
 # Texts must contain at least 3 words
 target = [target[ix] for ix, x in enumerate(texts) if len(x.split()) > window_size]
 texts = [x for x in texts if len(x.split()) > window_size]
@@ -137,50 +136,60 @@ saver = tf.train.Saver({"embeddings": embeddings, "doc_embeddings": doc_embeddin
 # Add variable initializer.
 init = tf.initialize_all_variables()
 sess.run(init)
+# model_checkpoint_path = os.path.join(os.getcwd(), data_folder_name, 'doc2vec_movie_embeddings.ckpt')
+# saver.restore(sess, model_checkpoint_path)
 
 # Run the skip gram model.
 print('Starting Training')
 loss_vec = []
 loss_x_vec = []
-for i in range(generations):
-    batch_inputs, batch_labels = text_helpers.generate_batch_data(text_data, batch_size,
-                                                                  window_size, method='doc2vec')
-    feed_dict = {x_inputs: batch_inputs, y_target: batch_labels}
 
-    # Run the train step
-    sess.run(train_step, feed_dict=feed_dict)
+model_init = True
+if model_init:
+    for i in range(generations):
+        batch_inputs, batch_labels = text_helpers.generate_batch_data(text_data, batch_size,
+                                                                      window_size, method='doc2vec')
+        feed_dict = {x_inputs: batch_inputs, y_target: batch_labels}
 
-    # Return the loss
-    if (i + 1) % print_loss_every == 0:
-        loss_val = sess.run(loss, feed_dict=feed_dict)
-        loss_vec.append(loss_val)
-        loss_x_vec.append(i + 1)
-        print('Loss at step {} : {}'.format(i + 1, loss_val))
+        # Run the train step
+        sess.run(train_step, feed_dict=feed_dict)
 
-    # Validation: Print some random words and top 5 related words
-    if (i + 1) % print_valid_every == 0:
-        sim = sess.run(similarity, feed_dict=feed_dict)
-        for j in range(len(valid_words)):
-            valid_word = word_dictionary_rev[valid_examples[j]]
-            top_k = 5  # number of nearest neighbors
-            nearest = (-sim[j, :]).argsort()[1:top_k + 1]
-            log_str = "Nearest to {}:".format(valid_word)
-            for k in range(top_k):
-                close_word = word_dictionary_rev[nearest[k]]
-                log_str = '{} {},'.format(log_str, close_word)
-            print(log_str)
+        # Return the loss
+        if (i + 1) % print_loss_every == 0:
+            loss_val = sess.run(loss, feed_dict=feed_dict)
+            loss_vec.append(loss_val)
+            loss_x_vec.append(i + 1)
+            print('Loss at step {} : {}'.format(i + 1, loss_val))
 
-    # Save dictionary + embeddings
-    if (i + 1) % save_embeddings_every == 0:
-        # Save vocabulary dictionary
-        with open(os.path.join(data_folder_name, 'movie_vocab.pkl'), 'wb') as f:
-            pickle.dump(word_dictionary, f)
+        # Validation: Print some random words and top 5 related words
+        if (i + 1) % print_valid_every == 0:
+            sim = sess.run(similarity, feed_dict=feed_dict)
+            for j in range(len(valid_words)):
+                valid_word = word_dictionary_rev[valid_examples[j]]
+                top_k = 5  # number of nearest neighbors
+                nearest = (-sim[j, :]).argsort()[1:top_k + 1]
+                log_str = "Nearest to {}:".format(valid_word)
+                for k in range(top_k):
+                    close_word = word_dictionary_rev[nearest[k]]
+                    log_str = '{} {},'.format(log_str, close_word)
+                print(log_str)
 
-        # Save embeddings
-        model_checkpoint_path = os.path.join(os.getcwd(), data_folder_name, 'doc2vec_movie_embeddings.ckpt')
-        save_path = saver.save(sess, model_checkpoint_path)
-        print('Model saved in file: {}'.format(save_path))
+        # Save dictionary + embeddings
+        if (i + 1) % save_embeddings_every == 0:
+            # Save vocabulary dictionary
+            with open(os.path.join(data_folder_name, 'movie_vocab.pkl'), 'wb') as f:
+                pickle.dump(word_dictionary, f)
 
+            # Save embeddings
+            model_checkpoint_path = os.path.join(os.getcwd(), data_folder_name, 'doc2vec_movie_embeddings.ckpt')
+            save_path = saver.save(sess, model_checkpoint_path)
+            print('Model saved in file: {}'.format(save_path))
+        # print(i)
+
+
+docs = sess.run(doc_embeddings)
+# print(len(texts), len(docs), len(docs[0]), len(texts), len(texts[0]))
+# saver.restore(sess, model_checkpoint_path)
 
 # Start logistic model-------------------------
 max_words = 20
@@ -188,22 +197,30 @@ logistic_batch_size = 500
 
 # Split dataset into train and test sets
 # Need to keep the indices sorted to keep track of document index
-train_indices = np.sort(np.random.choice(len(target), round(0.8 * len(target)), replace=False))
-test_indices = np.sort(np.array(list(set(range(len(target))) - set(train_indices))))
-texts_train = [x for ix, x in enumerate(texts) if ix in train_indices]
-texts_test = [x for ix, x in enumerate(texts) if ix in test_indices]
-target_train = np.array([x for ix, x in enumerate(target) if ix in train_indices])
-target_test = np.array([x for ix, x in enumerate(target) if ix in test_indices])
-
-# Convert texts to lists of indices
-text_data_train = np.array(text_helpers.text_to_numbers(texts_train, word_dictionary))
-text_data_test = np.array(text_helpers.text_to_numbers(texts_test, word_dictionary))
-
-# Pad/crop movie reviews to specific length
-text_data_train = np.array([x[0:max_words] for x in [y + [0] * max_words for y in text_data_train]])
-text_data_test = np.array([x[0:max_words] for x in [y + [0] * max_words for y in text_data_test]])
+# train_indices = np.sort(np.random.choice(len(target), round(0.8 * len(target)), replace=False))
+# test_indices = np.sort(np.array(list(set(range(len(target))) - set(train_indices))))
+# texts_train = [x for ix, x in enumerate(texts) if ix in train_indices]
+# texts_test = [x for ix, x in enumerate(texts) if ix in test_indices]
+# target_train = np.array([x for ix, x in enumerate(target) if ix in train_indices])
+# target_test = np.array([x for ix, x in enumerate(target) if ix in test_indices])
+#
+# # Convert texts to lists of indices
+# text_data_train = np.array(text_helpers.text_to_numbers(texts_train, word_dictionary))
+# text_data_test = np.array(text_helpers.text_to_numbers(texts_test, word_dictionary))
+#
+# # Pad/crop movie reviews to specific length
+# text_data_train = np.array([x[0:max_words] for x in [y + [0] * max_words for y in text_data_train]])
+# text_data_test = np.array([x[0:max_words] for x in [y + [0] * max_words for y in text_data_test]])
 
 # print(target)
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(docs, target, test_size=0.2, random_state=42)
+X_train = np.array(X_train)
+y_train = np.array(y_train)
+X_test = np.array(X_test)
+y_test = np.array(y_test)
+
+# print(len(X_train), len(X_train[0]), len(y_train), len(y_train[0]))
 
 from tensorflow import keras
 
@@ -211,7 +228,7 @@ model = keras.Sequential()
 activation_function = keras.layers.PReLU()
 
 # Input Layer
-model.add(keras.layers.Dense(405, kernel_initializer=keras.initializers.random_uniform, input_dim=max_words,
+model.add(keras.layers.Dense(405, kernel_initializer=keras.initializers.random_uniform, input_dim=doc_embedding_size,
                              kernel_regularizer=keras.regularizers.l2(0.01),
                              bias_regularizer=keras.regularizers.l2(0.01), name="input"))
 model.add(activation_function)
@@ -235,8 +252,8 @@ checkpoint = keras.callbacks.ModelCheckpoint("./model/best.h5", monitor='val_los
 callbacks_list = []
 
 # model = create_neural_model()
-model.fit(text_data_train, target_train, epochs=10000, batch_size=512, validation_split=0.2, callbacks=callbacks_list)
-print("Current one: ", model.evaluate(text_data_test, target_test, batch_size=256))
+model.fit(X_train, y_train, epochs=10000, batch_size=256, validation_split=0.1, callbacks=callbacks_list)
+print("Current one: ", model.evaluate(X_test, y_test, batch_size=256))
 
 # # Define Logistic placeholders
 # log_x_inputs = tf.placeholder(tf.int32, shape=[None, max_words + 1])  # plus 1 for doc index
