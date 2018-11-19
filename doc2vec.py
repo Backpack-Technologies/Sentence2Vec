@@ -40,7 +40,7 @@ sess = tf.Session()
 batch_size = 500
 vocabulary_size = 7500
 generations = 100000
-# generations = 100
+generations = 100
 model_learning_rate = 0.001
 
 embedding_size = 200  # Word embedding size
@@ -197,7 +197,7 @@ logistic_batch_size = 500
 
 # Split dataset into train and test sets
 # Need to keep the indices sorted to keep track of document index
-train_indices = np.sort(np.random.choice(len(target), round(0.9 * len(target)), replace=False))
+# train_indices = np.sort(np.random.choice(len(target), round(0.9 * len(target)), replace=False))
 # test_indices = np.sort(np.array(list(set(range(len(target))) - set(train_indices))))
 # texts_train = [x for ix, x in enumerate(texts) if ix in train_indices]
 # texts_test = [x for ix, x in enumerate(texts) if ix in test_indices]
@@ -214,13 +214,21 @@ train_indices = np.sort(np.random.choice(len(target), round(0.9 * len(target)), 
 
 # print(target)
 print("starting")
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(docs, target, test_size=0.2, random_state=42, shuffle=False)
-X_train = np.array(X_train)
-y_train = np.array(y_train)
-X_test = np.array(X_test)
-y_test = np.array(y_test)
+# from sklearn.model_selection import train_test_split
+# X_train, X_test, y_train, y_test = train_test_split(docs, target, test_size=0.2, random_state=42, shuffle=False)
+# X_train = np.array(X_train)
+# y_train = np.array(y_train)
+# X_test = np.array(X_test)
+# y_test = np.array(y_test)
 
+docs = np.array(docs)
+target = np.array(target)
+
+ratio = docs.shape[0]/10
+X_train = docs[ratio:,:]
+X_test = docs[:ratio,:]
+Y_train = target[ratio:,:]
+Y_test = target[:ratio,:]
 
 
 print(len(X_train), len(X_train[0]), len(y_train), len(y_train[0]))
